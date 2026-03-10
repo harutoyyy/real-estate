@@ -28,13 +28,13 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 .form-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
 .form-row input.num-input { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
 .form-row input.num-input:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 2px rgba(63,81,181,.15); }
-.form-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
+.form-row .unit { flex: 0 0 60px; font-size: 0.8rem; color: #888; }
 
 /* Auto calc display */
 .auto-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
 .auto-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
 .auto-row .value { flex: 1; font-size: 0.85rem; font-weight: 600; color: #1a237e; text-align: right; padding-right: 10px; }
-.auto-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
+.auto-row .unit { flex: 0 0 60px; font-size: 0.8rem; color: #888; }
 
 /* Toggle */
 .toggle-wrap { display: flex; align-items: center; gap: 6px; }
@@ -80,6 +80,7 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .card-header h3 { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
 .card-header-bar { margin-bottom: 12px; border-bottom: 2px solid #e8eaf6; padding-bottom: 6px; }
+.header-actions { display: flex; gap: 6px; align-items: center; }
 .rent-actions { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
 .rent-actions input.num-input { width: 120px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.8rem; text-align: right; }
 
@@ -131,9 +132,8 @@ const NAMES = ["件名A", "件名B"];
 const TSUBO = 3.30579;
 
 const DEFAULTS = {
-  landArea: '', landAreaUnit: 'sqm',
-  landPrice: '', landPriceUnit: 'sqm',
-  buildingPrice: '', buildingPriceUnit: 'sqm',
+  landArea: '', landUnit: 'sqm',
+  landPrice: '', buildingPrice: '',
   coverageRatio: '', floorAreaRatio: '',
   expense1: '', expense1Mode: 'yen',
   expense2: '', expense2Mode: 'yen',
@@ -152,36 +152,38 @@ function init() {
 }
 
 function buildForm(idx) {
+  const d = DATA[idx];
   const el = document.getElementById('form-' + idx);
+  const isTsubo = d.landUnit === 'tsubo';
+  const areaUnitLabel = isTsubo ? '坪' : '㎡';
+  const priceUnitLabel = isTsubo ? '円/坪' : '円/㎡';
+
   el.innerHTML = `
     <div class="card">
       <div class="card-header card-header-bar">
         <h3>土地・建物</h3>
-        <button class="btn-small btn-reset" data-reset="land">リセット</button>
+        <div class="header-actions">
+          <span class="toggle-wrap">
+            <span class="toggle-btn ${!isTsubo ? 'active' : ''}" data-toggle="landUnit" data-val="sqm">㎡</span>
+            <span class="toggle-btn ${isTsubo ? 'active' : ''}" data-toggle="landUnit" data-val="tsubo">坪</span>
+          </span>
+          <button class="btn-small btn-reset" data-reset="land">リセット</button>
+        </div>
       </div>
       <div class="form-row">
         <label>土地面積</label>
         <input type="text" class="num-input" data-field="landArea" inputmode="decimal">
-        <div class="toggle-wrap">
-          <span class="toggle-btn active" data-toggle="landAreaUnit" data-val="sqm">㎡</span>
-          <span class="toggle-btn" data-toggle="landAreaUnit" data-val="tsubo">坪</span>
-        </div>
+        <span class="unit">${areaUnitLabel}</span>
       </div>
       <div class="form-row">
         <label>土地単価</label>
         <input type="text" class="num-input" data-field="landPrice" inputmode="decimal">
-        <div class="toggle-wrap">
-          <span class="toggle-btn active" data-toggle="landPriceUnit" data-val="sqm">円/㎡</span>
-          <span class="toggle-btn" data-toggle="landPriceUnit" data-val="tsubo">円/坪</span>
-        </div>
+        <span class="unit">${priceUnitLabel}</span>
       </div>
       <div class="form-row">
         <label>建物単価</label>
         <input type="text" class="num-input" data-field="buildingPrice" inputmode="decimal">
-        <div class="toggle-wrap">
-          <span class="toggle-btn active" data-toggle="buildingPriceUnit" data-val="sqm">円/㎡</span>
-          <span class="toggle-btn" data-toggle="buildingPriceUnit" data-val="tsubo">円/坪</span>
-        </div>
+        <span class="unit">${priceUnitLabel}</span>
       </div>
       <div class="form-row">
         <label>建ぺい率</label>
@@ -229,16 +231,16 @@ function buildForm(idx) {
         <label>経費①</label>
         <input type="text" class="num-input" data-field="expense1" inputmode="decimal">
         <div class="toggle-wrap">
-          <span class="toggle-btn active" data-toggle="expense1Mode" data-val="yen">円</span>
-          <span class="toggle-btn" data-toggle="expense1Mode" data-val="pct">%</span>
+          <span class="toggle-btn ${d.expense1Mode === 'yen' ? 'active' : ''}" data-toggle="expense1Mode" data-val="yen">円</span>
+          <span class="toggle-btn ${d.expense1Mode === 'pct' ? 'active' : ''}" data-toggle="expense1Mode" data-val="pct">%</span>
         </div>
       </div>
       <div class="form-row">
         <label>経費②</label>
         <input type="text" class="num-input" data-field="expense2" inputmode="decimal">
         <div class="toggle-wrap">
-          <span class="toggle-btn active" data-toggle="expense2Mode" data-val="yen">円</span>
-          <span class="toggle-btn" data-toggle="expense2Mode" data-val="pct">%</span>
+          <span class="toggle-btn ${d.expense2Mode === 'yen' ? 'active' : ''}" data-toggle="expense2Mode" data-val="yen">円</span>
+          <span class="toggle-btn ${d.expense2Mode === 'pct' ? 'active' : ''}" data-toggle="expense2Mode" data-val="pct">%</span>
         </div>
       </div>
     </div>
@@ -246,13 +248,13 @@ function buildForm(idx) {
     <div class="card">
       <div class="card-header card-header-bar">
         <h3>家賃（フロアごと）</h3>
-        <span style="display:flex;gap:6px;align-items:center;">
+        <div class="header-actions">
           <span class="toggle-wrap">
-            <span class="toggle-btn active" data-toggle="rentUnit" data-val="sqm">円/㎡</span>
-            <span class="toggle-btn" data-toggle="rentUnit" data-val="tsubo">円/坪</span>
+            <span class="toggle-btn ${d.rentUnit === 'sqm' ? 'active' : ''}" data-toggle="rentUnit" data-val="sqm">円/㎡</span>
+            <span class="toggle-btn ${d.rentUnit === 'tsubo' ? 'active' : ''}" data-toggle="rentUnit" data-val="tsubo">円/坪</span>
           </span>
           <button class="btn-small btn-reset" data-reset="rent">リセット</button>
-        </span>
+        </div>
       </div>
       <div class="rent-actions" id="rent-actions-${idx}">
         <input type="text" class="num-input" id="rent-all-${idx}" inputmode="decimal" placeholder="一括入力">
@@ -268,16 +270,19 @@ function buildForm(idx) {
       </div>
       <div class="form-row">
         <label>販売利率</label>
-        <input type="text" class="num-input" data-field="saleRate" inputmode="decimal" value="5.5">
+        <input type="text" class="num-input" data-field="saleRate" inputmode="decimal">
         <span class="unit">%</span>
       </div>
       <div class="form-row">
         <label>税率</label>
-        <input type="text" class="num-input" data-field="taxRate" inputmode="decimal" value="33">
+        <input type="text" class="num-input" data-field="taxRate" inputmode="decimal">
         <span class="unit">%</span>
       </div>
     </div>
   `;
+
+  // Restore input values from DATA
+  restoreFormValues(idx);
 
   // Bind inputs
   el.querySelectorAll('input[data-field]').forEach(inp => {
@@ -298,10 +303,19 @@ function buildForm(idx) {
       const field = btn.dataset.toggle;
       const val = btn.dataset.val;
       DATA[idx][field] = val;
+
+      if (field === 'landUnit') {
+        // Rebuild form to update all unit labels
+        buildForm(idx);
+        updateFloors(idx);
+        recalcAll();
+        return;
+      }
+
       const wrap = btn.parentElement;
       wrap.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      if (field === 'landAreaUnit' || field === 'rentUnit') {
+      if (field === 'rentUnit') {
         updateFloors(idx);
       }
       recalcAll();
@@ -311,8 +325,7 @@ function buildForm(idx) {
   // Bind reset buttons
   el.querySelectorAll('.btn-reset[data-reset]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const section = btn.dataset.reset;
-      resetSection(idx, section);
+      resetSection(idx, btn.dataset.reset);
     });
   });
 
@@ -323,6 +336,22 @@ function buildForm(idx) {
   document.getElementById('rent-all-' + idx).addEventListener('input', (e) => {
     formatInput(e.target);
   });
+
+  // Rebuild floor rows
+  updateFloors(idx);
+}
+
+function restoreFormValues(idx) {
+  const d = DATA[idx];
+  const el = document.getElementById('form-' + idx);
+  const fields = ['landArea', 'landPrice', 'buildingPrice', 'coverageRatio', 'floorAreaRatio',
+                  'expense1', 'expense2', 'saleRate', 'taxRate'];
+  fields.forEach(f => {
+    const inp = el.querySelector(`input[data-field="${f}"]`);
+    if (!inp) return;
+    const v = d[f];
+    inp.value = (v !== '' && v !== undefined) ? addCommas(v) : '';
+  });
 }
 
 function updateFloors(idx) {
@@ -330,7 +359,7 @@ function updateFloors(idx) {
   const coverage = num(d.coverageRatio);
   const far = num(d.floorAreaRatio);
   const landAreaRaw = num(d.landArea);
-  const landArea = d.landAreaUnit === 'tsubo' ? landAreaRaw * TSUBO : landAreaRaw;
+  const landArea = d.landUnit === 'tsubo' ? landAreaRaw * TSUBO : landAreaRaw;
 
   const buildingArea = landArea * far / 100;
   const floorCount = coverage > 0 ? Math.floor(far / coverage) : 0;
@@ -349,7 +378,6 @@ function updateFloors(idx) {
   const rentUnit = d.rentUnit || 'sqm';
   const areaLabel = rentUnit === 'tsubo' ? fmt(floorArea / TSUBO) + ' 坪' : fmt(floorArea) + ' ㎡';
   const unitLabel = rentUnit === 'tsubo' ? '円/坪' : '円/㎡';
-  // Preserve existing rents
   const oldRents = d.rents.slice();
   d.rents = [];
   container.innerHTML = '';
@@ -377,58 +405,35 @@ function updateFloors(idx) {
 
 function resetSection(idx, section) {
   const d = DATA[idx];
-  const el = document.getElementById('form-' + idx);
 
-  if (section === 'rent') {
+  if (section === 'land') {
+    d.landArea = '';
+    d.landPrice = '';
+    d.buildingPrice = '';
+    d.coverageRatio = '';
+    d.floorAreaRatio = '';
+    d.landUnit = 'sqm';
+    buildForm(idx);
+    recalcAll();
+  } else if (section === 'expense') {
+    d.expense1 = '';
+    d.expense2 = '';
+    d.expense1Mode = 'yen';
+    d.expense2Mode = 'yen';
+    buildForm(idx);
+    recalcAll();
+  } else if (section === 'rent') {
     d.rents = d.rents.map(() => '');
     d.rentUnit = 'sqm';
     document.getElementById('rent-all-' + idx).value = '';
-    // Reset rent unit toggles
-    el.querySelectorAll('.toggle-btn[data-toggle="rentUnit"]').forEach(b => {
-      b.classList.toggle('active', b.dataset.val === 'sqm');
-    });
-    updateFloors(idx);
+    buildForm(idx);
     recalcAll();
-    return;
+  } else if (section === 'other') {
+    d.saleRate = 5.5;
+    d.taxRate = 33;
+    buildForm(idx);
+    recalcAll();
   }
-
-  const fieldMap = {
-    land: { fields: ['landArea', 'landPrice', 'buildingPrice', 'coverageRatio', 'floorAreaRatio'],
-            toggles: { landAreaUnit: 'sqm', landPriceUnit: 'sqm', buildingPriceUnit: 'sqm' } },
-    expense: { fields: ['expense1', 'expense2'],
-               toggles: { expense1Mode: 'yen', expense2Mode: 'yen' } },
-    other: { fields: ['saleRate', 'taxRate'], toggles: {} }
-  };
-
-  const cfg = fieldMap[section];
-  if (!cfg) return;
-
-  // Reset data values
-  cfg.fields.forEach(f => {
-    if (f === 'saleRate') d[f] = 5.5;
-    else if (f === 'taxRate') d[f] = 33;
-    else d[f] = '';
-  });
-
-  // Reset input elements
-  cfg.fields.forEach(f => {
-    const inp = el.querySelector(`input[data-field="${f}"]`);
-    if (!inp) return;
-    if (f === 'saleRate') inp.value = '5.5';
-    else if (f === 'taxRate') inp.value = '33';
-    else inp.value = '';
-  });
-
-  // Reset toggles
-  Object.entries(cfg.toggles).forEach(([field, defaultVal]) => {
-    d[field] = defaultVal;
-    el.querySelectorAll(`.toggle-btn[data-toggle="${field}"]`).forEach(b => {
-      b.classList.toggle('active', b.dataset.val === defaultVal);
-    });
-  });
-
-  if (section === 'land') updateFloors(idx);
-  recalcAll();
 }
 
 function applyAllRent(idx) {
@@ -443,13 +448,13 @@ function applyAllRent(idx) {
 
 function calc(idx) {
   const d = DATA[idx];
-  // 坪→㎡変換: 面積は×TSUBO、単価は÷TSUBO
+  const isTsubo = d.landUnit === 'tsubo';
   const landAreaRaw = num(d.landArea);
-  const landArea = d.landAreaUnit === 'tsubo' ? landAreaRaw * TSUBO : landAreaRaw;
+  const landArea = isTsubo ? landAreaRaw * TSUBO : landAreaRaw;
   const landPriceRaw = num(d.landPrice);
-  const landPrice = d.landPriceUnit === 'tsubo' ? landPriceRaw / TSUBO : landPriceRaw;
+  const landPrice = isTsubo ? landPriceRaw / TSUBO : landPriceRaw;
   const buildingPriceRaw = num(d.buildingPrice);
-  const buildingPricePerSqm = d.buildingPriceUnit === 'tsubo' ? buildingPriceRaw / TSUBO : buildingPriceRaw;
+  const buildingPricePerSqm = isTsubo ? buildingPriceRaw / TSUBO : buildingPriceRaw;
   const coverage = num(d.coverageRatio);
   const far = num(d.floorAreaRatio);
   const saleRate = num(d.saleRate);
@@ -467,7 +472,6 @@ function calc(idx) {
   let monthlyRent = 0;
   for (let i = 0; i < floorCount; i++) {
     const r = i < d.rents.length ? num(d.rents[i]) : 0;
-    // 坪入力の場合: 家賃単価(円/坪)→円/㎡に変換して㎡面積と掛ける
     const rPerSqm = rentUnit === 'tsubo' ? r / TSUBO : r;
     monthlyRent += floorArea * rPerSqm;
   }
@@ -506,47 +510,34 @@ function recalcAll() {
 
 function updateConversions(idx) {
   const d = DATA[idx];
+  const isTsubo = d.landUnit === 'tsubo';
   const landAreaRaw = num(d.landArea);
   const landPriceRaw = num(d.landPrice);
   const buildingPriceRaw = num(d.buildingPrice);
 
-  // 土地面積: 入力が㎡→坪を表示、坪→㎡を表示
   if (landAreaRaw > 0) {
-    if (d.landAreaUnit === 'sqm') {
-      document.getElementById('landAreaConv-' + idx).textContent = fmt(landAreaRaw / TSUBO);
-      document.getElementById('landAreaConvUnit-' + idx).textContent = '坪';
-    } else {
-      document.getElementById('landAreaConv-' + idx).textContent = fmt(landAreaRaw * TSUBO);
-      document.getElementById('landAreaConvUnit-' + idx).textContent = '㎡';
-    }
+    document.getElementById('landAreaConv-' + idx).textContent = isTsubo ? fmt(landAreaRaw * TSUBO) : fmt(landAreaRaw / TSUBO);
+    document.getElementById('landAreaConvUnit-' + idx).textContent = isTsubo ? '㎡' : '坪';
   } else {
     document.getElementById('landAreaConv-' + idx).textContent = '-';
     document.getElementById('landAreaConvUnit-' + idx).textContent = '';
   }
 
-  // 土地単価
   if (landPriceRaw > 0) {
-    if (d.landPriceUnit === 'sqm') {
-      document.getElementById('landPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(landPriceRaw * TSUBO));
-      document.getElementById('landPriceConvUnit-' + idx).textContent = '円/坪';
-    } else {
-      document.getElementById('landPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(landPriceRaw / TSUBO));
-      document.getElementById('landPriceConvUnit-' + idx).textContent = '円/㎡';
-    }
+    document.getElementById('landPriceConv-' + idx).textContent = isTsubo
+      ? '¥' + addCommas(Math.round(landPriceRaw / TSUBO))
+      : '¥' + addCommas(Math.round(landPriceRaw * TSUBO));
+    document.getElementById('landPriceConvUnit-' + idx).textContent = isTsubo ? '円/㎡' : '円/坪';
   } else {
     document.getElementById('landPriceConv-' + idx).textContent = '-';
     document.getElementById('landPriceConvUnit-' + idx).textContent = '';
   }
 
-  // 建物単価
   if (buildingPriceRaw > 0) {
-    if (d.buildingPriceUnit === 'sqm') {
-      document.getElementById('buildingPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(buildingPriceRaw * TSUBO));
-      document.getElementById('buildingPriceConvUnit-' + idx).textContent = '円/坪';
-    } else {
-      document.getElementById('buildingPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(buildingPriceRaw / TSUBO));
-      document.getElementById('buildingPriceConvUnit-' + idx).textContent = '円/㎡';
-    }
+    document.getElementById('buildingPriceConv-' + idx).textContent = isTsubo
+      ? '¥' + addCommas(Math.round(buildingPriceRaw / TSUBO))
+      : '¥' + addCommas(Math.round(buildingPriceRaw * TSUBO));
+    document.getElementById('buildingPriceConvUnit-' + idx).textContent = isTsubo ? '円/㎡' : '円/坪';
   } else {
     document.getElementById('buildingPriceConv-' + idx).textContent = '-';
     document.getElementById('buildingPriceConvUnit-' + idx).textContent = '';
