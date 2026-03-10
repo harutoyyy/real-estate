@@ -26,8 +26,8 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 /* Form */
 .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
 .form-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
-.form-row input[type="number"] { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
-.form-row input[type="number"]:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 2px rgba(63,81,181,.15); }
+.form-row input.num-input { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
+.form-row input.num-input:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 2px rgba(63,81,181,.15); }
 .form-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
 
 /* Auto calc display */
@@ -45,7 +45,8 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 .floor-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
 .floor-row .floor-label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
 .floor-row .floor-area { font-size: 0.8rem; color: #888; flex: 0 0 90px; text-align: right; }
-.floor-row input[type="number"] { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
+.floor-row input.num-input { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
+.floor-row input.num-input:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 2px rgba(63,81,181,.15); }
 .floor-row .unit { flex: 0 0 60px; font-size: 0.8rem; color: #888; }
 
 /* Result */
@@ -144,7 +145,7 @@ function buildForm(idx) {
       <h3>土地・建物</h3>
       <div class="form-row">
         <label>土地面積</label>
-        <input type="number" data-field="landArea" step="any">
+        <input type="text" class="num-input" data-field="landArea" inputmode="decimal">
         <div class="toggle-wrap">
           <span class="toggle-btn active" data-toggle="landAreaUnit" data-val="sqm">㎡</span>
           <span class="toggle-btn" data-toggle="landAreaUnit" data-val="tsubo">坪</span>
@@ -152,7 +153,7 @@ function buildForm(idx) {
       </div>
       <div class="form-row">
         <label>土地単価</label>
-        <input type="number" data-field="landPrice" step="any">
+        <input type="text" class="num-input" data-field="landPrice" inputmode="decimal">
         <div class="toggle-wrap">
           <span class="toggle-btn active" data-toggle="landPriceUnit" data-val="sqm">円/㎡</span>
           <span class="toggle-btn" data-toggle="landPriceUnit" data-val="tsubo">円/坪</span>
@@ -160,7 +161,7 @@ function buildForm(idx) {
       </div>
       <div class="form-row">
         <label>建物単価</label>
-        <input type="number" data-field="buildingPrice" step="any">
+        <input type="text" class="num-input" data-field="buildingPrice" inputmode="decimal">
         <div class="toggle-wrap">
           <span class="toggle-btn active" data-toggle="buildingPriceUnit" data-val="sqm">円/㎡</span>
           <span class="toggle-btn" data-toggle="buildingPriceUnit" data-val="tsubo">円/坪</span>
@@ -168,12 +169,12 @@ function buildForm(idx) {
       </div>
       <div class="form-row">
         <label>建ぺい率</label>
-        <input type="number" data-field="coverageRatio" step="any">
+        <input type="text" class="num-input" data-field="coverageRatio" inputmode="decimal">
         <span class="unit">%</span>
       </div>
       <div class="form-row">
         <label>容積率</label>
-        <input type="number" data-field="floorAreaRatio" step="any">
+        <input type="text" class="num-input" data-field="floorAreaRatio" inputmode="decimal">
         <span class="unit">%</span>
       </div>
       <div class="auto-row">
@@ -192,7 +193,7 @@ function buildForm(idx) {
       <h3>経費</h3>
       <div class="form-row">
         <label>経費①</label>
-        <input type="number" data-field="expense1" step="any">
+        <input type="text" class="num-input" data-field="expense1" inputmode="decimal">
         <div class="toggle-wrap">
           <span class="toggle-btn active" data-toggle="expense1Mode" data-val="yen">円</span>
           <span class="toggle-btn" data-toggle="expense1Mode" data-val="pct">%</span>
@@ -200,7 +201,7 @@ function buildForm(idx) {
       </div>
       <div class="form-row">
         <label>経費②</label>
-        <input type="number" data-field="expense2" step="any">
+        <input type="text" class="num-input" data-field="expense2" inputmode="decimal">
         <div class="toggle-wrap">
           <span class="toggle-btn active" data-toggle="expense2Mode" data-val="yen">円</span>
           <span class="toggle-btn" data-toggle="expense2Mode" data-val="pct">%</span>
@@ -223,12 +224,12 @@ function buildForm(idx) {
       <h3>その他</h3>
       <div class="form-row">
         <label>販売利率</label>
-        <input type="number" data-field="saleRate" step="any" value="5.5">
+        <input type="text" class="num-input" data-field="saleRate" inputmode="decimal" value="5.5">
         <span class="unit">%</span>
       </div>
       <div class="form-row">
         <label>税率</label>
-        <input type="number" data-field="taxRate" step="any" value="33">
+        <input type="text" class="num-input" data-field="taxRate" inputmode="decimal" value="33">
         <span class="unit">%</span>
       </div>
     </div>
@@ -237,8 +238,9 @@ function buildForm(idx) {
   // Bind inputs
   el.querySelectorAll('input[data-field]').forEach(inp => {
     inp.addEventListener('input', () => {
+      formatInput(inp);
       const f = inp.dataset.field;
-      DATA[idx][f] = inp.value === '' ? '' : parseFloat(inp.value);
+      DATA[idx][f] = parseNum(inp.value);
       if (f === 'landArea' || f === 'coverageRatio' || f === 'floorAreaRatio') {
         updateFloors(idx);
       }
@@ -301,11 +303,12 @@ function updateFloors(idx) {
     row.innerHTML = `
       <span class="floor-label">${i + 1}F</span>
       <span class="floor-area">${areaLabel}</span>
-      <input type="number" step="any" value="${oldVal}" data-rent="${i}">
+      <input type="text" class="num-input" value="${oldVal !== '' ? addCommas(oldVal) : ''}" data-rent="${i}" inputmode="decimal">
       <span class="unit">${unitLabel}</span>
     `;
     row.querySelector('input').addEventListener('input', (e) => {
-      d.rents[i] = e.target.value === '' ? '' : parseFloat(e.target.value);
+      formatInput(e.target);
+      d.rents[i] = parseNum(e.target.value);
       recalcAll();
     });
     container.appendChild(row);
@@ -455,9 +458,40 @@ function bindTabs() {
 }
 
 // Helpers
-function num(v) { return v === '' || v === undefined || v === null || isNaN(v) ? 0 : parseFloat(v); }
-function fmt(n) { return Number(n.toFixed(2)).toLocaleString('ja-JP'); }
-function fmtYen(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function parseNum(v) {
+  if (v === '' || v === undefined || v === null) return '';
+  const s = String(v).replace(/,/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? '' : n;
+}
+function num(v) { const n = parseNum(v); return n === '' ? 0 : n; }
+function addCommas(v) {
+  const s = String(v);
+  const parts = s.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+function formatInput(inp) {
+  const raw = inp.value.replace(/,/g, '');
+  if (raw === '' || raw === '-' || raw === '.') return;
+  const n = parseFloat(raw);
+  if (isNaN(n)) return;
+  const cur = inp.selectionStart;
+  const oldLen = inp.value.length;
+  const dotIdx = raw.indexOf('.');
+  if (dotIdx !== -1) {
+    const intPart = raw.substring(0, dotIdx);
+    const decPart = raw.substring(dotIdx);
+    inp.value = addCommas(intPart) + decPart;
+  } else {
+    inp.value = addCommas(raw);
+  }
+  const newLen = inp.value.length;
+  const newCur = cur + (newLen - oldLen);
+  inp.setSelectionRange(newCur, newCur);
+}
+function fmt(n) { return addCommas(Number(n.toFixed(2))); }
+function fmtYen(n) { return '¥' + addCommas(Math.round(n)); }
 function fmtPct(n) { return n.toFixed(2) + '%'; }
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
