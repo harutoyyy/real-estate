@@ -114,12 +114,17 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 const DATA = [{}, {}];
 const NAMES = ["件名A", "件名B"];
 
+const TSUBO = 3.30579;
+
 const DEFAULTS = {
-  landArea: '', landPrice: '', buildingPrice: '',
+  landArea: '', landAreaUnit: 'sqm',
+  landPrice: '', landPriceUnit: 'sqm',
+  buildingPrice: '', buildingPriceUnit: 'sqm',
   coverageRatio: '', floorAreaRatio: '',
   expense1: '', expense1Mode: 'yen',
   expense2: '', expense2Mode: 'yen',
   saleRate: 5.5, taxRate: 33,
+  rentUnit: 'sqm',
   rents: []
 };
 
@@ -140,17 +145,26 @@ function buildForm(idx) {
       <div class="form-row">
         <label>土地面積</label>
         <input type="number" data-field="landArea" step="any">
-        <span class="unit">㎡</span>
+        <div class="toggle-wrap">
+          <span class="toggle-btn active" data-toggle="landAreaUnit" data-val="sqm">㎡</span>
+          <span class="toggle-btn" data-toggle="landAreaUnit" data-val="tsubo">坪</span>
+        </div>
       </div>
       <div class="form-row">
         <label>土地単価</label>
         <input type="number" data-field="landPrice" step="any">
-        <span class="unit">円/㎡</span>
+        <div class="toggle-wrap">
+          <span class="toggle-btn active" data-toggle="landPriceUnit" data-val="sqm">円/㎡</span>
+          <span class="toggle-btn" data-toggle="landPriceUnit" data-val="tsubo">円/坪</span>
+        </div>
       </div>
       <div class="form-row">
         <label>建物単価</label>
         <input type="number" data-field="buildingPrice" step="any">
-        <span class="unit">円/㎡</span>
+        <div class="toggle-wrap">
+          <span class="toggle-btn active" data-toggle="buildingPriceUnit" data-val="sqm">円/㎡</span>
+          <span class="toggle-btn" data-toggle="buildingPriceUnit" data-val="tsubo">円/坪</span>
+        </div>
       </div>
       <div class="form-row">
         <label>建ぺい率</label>
@@ -195,7 +209,13 @@ function buildForm(idx) {
     </div>
 
     <div class="card">
-      <h3>家賃（フロアごと）</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">
+        家賃（フロアごと）
+        <span class="toggle-wrap" style="margin-left:auto;">
+          <span class="toggle-btn active" data-toggle="rentUnit" data-val="sqm">円/㎡</span>
+          <span class="toggle-btn" data-toggle="rentUnit" data-val="tsubo">円/坪</span>
+        </span>
+      </h3>
       <div id="rent-rows-${idx}"><p style="font-size:.85rem;color:#999;">建ぺい率・容積率を入力するとフロアが生成されます</p></div>
     </div>
 
@@ -219,7 +239,7 @@ function buildForm(idx) {
     inp.addEventListener('input', () => {
       const f = inp.dataset.field;
       DATA[idx][f] = inp.value === '' ? '' : parseFloat(inp.value);
-      if (f === 'coverageRatio' || f === 'floorAreaRatio') {
+      if (f === 'landArea' || f === 'coverageRatio' || f === 'floorAreaRatio') {
         updateFloors(idx);
       }
       recalcAll();
@@ -235,6 +255,9 @@ function buildForm(idx) {
       const wrap = btn.parentElement;
       wrap.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      if (field === 'landAreaUnit' || field === 'rentUnit') {
+        updateFloors(idx);
+      }
       recalcAll();
     });
   });
@@ -244,7 +267,8 @@ function updateFloors(idx) {
   const d = DATA[idx];
   const coverage = num(d.coverageRatio);
   const far = num(d.floorAreaRatio);
-  const landArea = num(d.landArea);
+  const landAreaRaw = num(d.landArea);
+  const landArea = d.landAreaUnit === 'tsubo' ? landAreaRaw * TSUBO : landAreaRaw;
 
   const buildingArea = landArea * far / 100;
   const floorCount = coverage > 0 ? Math.floor(far / coverage) : 0;
@@ -260,6 +284,9 @@ function updateFloors(idx) {
   }
 
   const floorArea = buildingArea / floorCount;
+  const rentUnit = d.rentUnit || 'sqm';
+  const areaLabel = rentUnit === 'tsubo' ? fmt(floorArea / TSUBO) + ' 坪' : fmt(floorArea) + ' ㎡';
+  const unitLabel = rentUnit === 'tsubo' ? '円/坪' : '円/㎡';
   // Preserve existing rents
   const oldRents = d.rents.slice();
   d.rents = [];
@@ -273,9 +300,9 @@ function updateFloors(idx) {
     row.className = 'floor-row';
     row.innerHTML = `
       <span class="floor-label">${i + 1}F</span>
-      <span class="floor-area">${fmt(floorArea)} ㎡</span>
+      <span class="floor-area">${areaLabel}</span>
       <input type="number" step="any" value="${oldVal}" data-rent="${i}">
-      <span class="unit">円/㎡</span>
+      <span class="unit">${unitLabel}</span>
     `;
     row.querySelector('input').addEventListener('input', (e) => {
       d.rents[i] = e.target.value === '' ? '' : parseFloat(e.target.value);
@@ -287,9 +314,13 @@ function updateFloors(idx) {
 
 function calc(idx) {
   const d = DATA[idx];
-  const landArea = num(d.landArea);
-  const landPrice = num(d.landPrice);
-  const buildingPricePerSqm = num(d.buildingPrice);
+  // 坪→㎡変換: 面積は×TSUBO、単価は÷TSUBO
+  const landAreaRaw = num(d.landArea);
+  const landArea = d.landAreaUnit === 'tsubo' ? landAreaRaw * TSUBO : landAreaRaw;
+  const landPriceRaw = num(d.landPrice);
+  const landPrice = d.landPriceUnit === 'tsubo' ? landPriceRaw / TSUBO : landPriceRaw;
+  const buildingPriceRaw = num(d.buildingPrice);
+  const buildingPricePerSqm = d.buildingPriceUnit === 'tsubo' ? buildingPriceRaw / TSUBO : buildingPriceRaw;
   const coverage = num(d.coverageRatio);
   const far = num(d.floorAreaRatio);
   const saleRate = num(d.saleRate);
@@ -303,10 +334,13 @@ function calc(idx) {
   const buildingTotal = buildingArea * buildingPricePerSqm;
   const costTotal = landTotal + buildingTotal;
 
+  const rentUnit = d.rentUnit || 'sqm';
   let monthlyRent = 0;
   for (let i = 0; i < floorCount; i++) {
     const r = i < d.rents.length ? num(d.rents[i]) : 0;
-    monthlyRent += floorArea * r;
+    // 坪入力の場合: 家賃単価(円/坪)→円/㎡に変換して㎡面積と掛ける
+    const rPerSqm = rentUnit === 'tsubo' ? r / TSUBO : r;
+    monthlyRent += floorArea * rPerSqm;
   }
   const yearlyRent = monthlyRent * 12;
 
