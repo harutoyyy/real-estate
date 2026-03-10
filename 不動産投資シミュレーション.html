@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>不動産投資シミュレーション</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #f0f2f5; color: #333; }
+header { background: linear-gradient(135deg, #1a237e, #283593); color: #fff; padding: 18px 32px; text-align: center; }
+header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
+.container { display: flex; gap: 24px; padding: 24px; max-width: 1600px; margin: 0 auto; }
+.left { flex: 0 0 480px; }
+.right { flex: 1; min-width: 0; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.95rem; font-weight: 600; background: #ddd; color: #666; transition: all .2s; }
+.tab-btn.active { background: #fff; color: #1a237e; box-shadow: 0 -2px 6px rgba(0,0,0,.08); }
+.tab-name-input { border: none; background: transparent; font-size: 0.95rem; font-weight: 600; color: inherit; width: 100%; text-align: center; outline: none; }
+
+/* Card */
+.card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.07); padding: 20px; margin-bottom: 16px; }
+.card h3 { font-size: 0.9rem; color: #1a237e; margin-bottom: 12px; border-bottom: 2px solid #e8eaf6; padding-bottom: 6px; }
+
+/* Form */
+.form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
+.form-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
+.form-row input[type="number"] { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
+.form-row input[type="number"]:focus { border-color: #3f51b5; outline: none; box-shadow: 0 0 0 2px rgba(63,81,181,.15); }
+.form-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
+
+/* Auto calc display */
+.auto-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
+.auto-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
+.auto-row .value { flex: 1; font-size: 0.9rem; font-weight: 600; color: #1a237e; text-align: right; padding-right: 10px; }
+.auto-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; gap: 6px; }
+.toggle-btn { padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 0.75rem; color: #666; transition: all .2s; }
+.toggle-btn.active { background: #3f51b5; color: #fff; border-color: #3f51b5; }
+
+/* Floor rows */
+.floor-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
+.floor-row .floor-label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
+.floor-row .floor-area { font-size: 0.8rem; color: #888; flex: 0 0 90px; text-align: right; }
+.floor-row input[type="number"] { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; text-align: right; }
+.floor-row .unit { flex: 0 0 60px; font-size: 0.8rem; color: #888; }
+
+/* Result */
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.result-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.07); padding: 20px; }
+.result-card h3 { font-size: 1rem; color: #1a237e; margin-bottom: 14px; border-bottom: 2px solid #e8eaf6; padding-bottom: 6px; text-align: center; }
+.result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+.result-row:last-child { border-bottom: none; }
+.result-row .r-label { font-size: 0.85rem; color: #555; }
+.result-row .r-value { font-size: 0.9rem; font-weight: 600; text-align: right; }
+.r-value.positive { color: #2e7d32; }
+.r-value.negative { color: #c62828; }
+
+/* Diff */
+.diff-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.07); padding: 20px; margin-top: 16px; }
+.diff-card h3 { font-size: 1rem; color: #1a237e; margin-bottom: 14px; border-bottom: 2px solid #e8eaf6; padding-bottom: 6px; text-align: center; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+.diff-row:last-child { border-bottom: none; }
+.diff-row .d-label { font-size: 0.85rem; color: #555; }
+.diff-row .d-value { font-size: 0.85rem; font-weight: 600; }
+.highlight-a { background: rgba(33,150,243,.08); border-radius: 4px; padding: 2px 6px; color: #1565c0; }
+.highlight-b { background: rgba(76,175,80,.08); border-radius: 4px; padding: 2px 6px; color: #2e7d32; }
+
+.hidden { display: none; }
+
+@media (max-width: 1024px) {
+  .container { flex-direction: column; }
+  .left { flex: none; width: 100%; }
+  .result-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>不動産投資シミュレーション</h1>
+</header>
+
+<div class="container">
+  <!-- 左カラム -->
+  <div class="left">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="0">
+        <input type="text" class="tab-name-input" value="件名A" data-idx="0">
+      </button>
+      <button class="tab-btn" data-tab="1">
+        <input type="text" class="tab-name-input" value="件名B" data-idx="1">
+      </button>
+    </div>
+
+    <div id="form-0" class="form-panel"></div>
+    <div id="form-1" class="form-panel hidden"></div>
+  </div>
+
+  <!-- 右カラム -->
+  <div class="right">
+    <div class="result-grid">
+      <div class="result-card" id="result-0"></div>
+      <div class="result-card" id="result-1"></div>
+    </div>
+    <div class="diff-card" id="diff-panel"></div>
+  </div>
+</div>
+
+<script>
+const DATA = [{}, {}];
+const NAMES = ["件名A", "件名B"];
+
+const DEFAULTS = {
+  landArea: '', landPrice: '', buildingPrice: '',
+  coverageRatio: '', floorAreaRatio: '',
+  expense1: '', expense1Mode: 'yen',
+  expense2: '', expense2Mode: 'yen',
+  saleRate: 5.5, taxRate: 33,
+  rents: []
+};
+
+function init() {
+  DATA[0] = { ...DEFAULTS, rents: [] };
+  DATA[1] = { ...DEFAULTS, rents: [] };
+  buildForm(0);
+  buildForm(1);
+  bindTabs();
+  recalcAll();
+}
+
+function buildForm(idx) {
+  const el = document.getElementById('form-' + idx);
+  el.innerHTML = `
+    <div class="card">
+      <h3>土地・建物</h3>
+      <div class="form-row">
+        <label>土地面積</label>
+        <input type="number" data-field="landArea" step="any">
+        <span class="unit">㎡</span>
+      </div>
+      <div class="form-row">
+        <label>土地単価</label>
+        <input type="number" data-field="landPrice" step="any">
+        <span class="unit">円/㎡</span>
+      </div>
+      <div class="form-row">
+        <label>建物単価</label>
+        <input type="number" data-field="buildingPrice" step="any">
+        <span class="unit">円/㎡</span>
+      </div>
+      <div class="form-row">
+        <label>建ぺい率</label>
+        <input type="number" data-field="coverageRatio" step="any">
+        <span class="unit">%</span>
+      </div>
+      <div class="form-row">
+        <label>容積率</label>
+        <input type="number" data-field="floorAreaRatio" step="any">
+        <span class="unit">%</span>
+      </div>
+      <div class="auto-row">
+        <label>建物面積</label>
+        <span class="value" id="buildingArea-${idx}">-</span>
+        <span class="unit">㎡</span>
+      </div>
+      <div class="auto-row">
+        <label>フロア数</label>
+        <span class="value" id="floorCount-${idx}">-</span>
+        <span class="unit">階</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>経費</h3>
+      <div class="form-row">
+        <label>経費①</label>
+        <input type="number" data-field="expense1" step="any">
+        <div class="toggle-wrap">
+          <span class="toggle-btn active" data-toggle="expense1Mode" data-val="yen">円</span>
+          <span class="toggle-btn" data-toggle="expense1Mode" data-val="pct">%</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>経費②</label>
+        <input type="number" data-field="expense2" step="any">
+        <div class="toggle-wrap">
+          <span class="toggle-btn active" data-toggle="expense2Mode" data-val="yen">円</span>
+          <span class="toggle-btn" data-toggle="expense2Mode" data-val="pct">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>家賃（フロアごと）</h3>
+      <div id="rent-rows-${idx}"><p style="font-size:.85rem;color:#999;">建ぺい率・容積率を入力するとフロアが生成されます</p></div>
+    </div>
+
+    <div class="card">
+      <h3>その他</h3>
+      <div class="form-row">
+        <label>販売利率</label>
+        <input type="number" data-field="saleRate" step="any" value="5.5">
+        <span class="unit">%</span>
+      </div>
+      <div class="form-row">
+        <label>税率</label>
+        <input type="number" data-field="taxRate" step="any" value="33">
+        <span class="unit">%</span>
+      </div>
+    </div>
+  `;
+
+  // Bind inputs
+  el.querySelectorAll('input[data-field]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const f = inp.dataset.field;
+      DATA[idx][f] = inp.value === '' ? '' : parseFloat(inp.value);
+      if (f === 'coverageRatio' || f === 'floorAreaRatio') {
+        updateFloors(idx);
+      }
+      recalcAll();
+    });
+  });
+
+  // Bind toggles
+  el.querySelectorAll('.toggle-btn[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.toggle;
+      const val = btn.dataset.val;
+      DATA[idx][field] = val;
+      const wrap = btn.parentElement;
+      wrap.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      recalcAll();
+    });
+  });
+}
+
+function updateFloors(idx) {
+  const d = DATA[idx];
+  const coverage = num(d.coverageRatio);
+  const far = num(d.floorAreaRatio);
+  const landArea = num(d.landArea);
+
+  const buildingArea = landArea * far / 100;
+  const floorCount = coverage > 0 ? Math.floor(far / coverage) : 0;
+
+  document.getElementById('buildingArea-' + idx).textContent = buildingArea > 0 ? fmt(buildingArea) : '-';
+  document.getElementById('floorCount-' + idx).textContent = floorCount > 0 ? floorCount : '-';
+
+  const container = document.getElementById('rent-rows-' + idx);
+  if (floorCount <= 0) {
+    container.innerHTML = '<p style="font-size:.85rem;color:#999;">建ぺい率・容積率を入力するとフロアが生成されます</p>';
+    d.rents = [];
+    return;
+  }
+
+  const floorArea = buildingArea / floorCount;
+  // Preserve existing rents
+  const oldRents = d.rents.slice();
+  d.rents = [];
+  container.innerHTML = '';
+
+  for (let i = 0; i < floorCount; i++) {
+    const oldVal = i < oldRents.length ? oldRents[i] : '';
+    d.rents.push(oldVal);
+
+    const row = document.createElement('div');
+    row.className = 'floor-row';
+    row.innerHTML = `
+      <span class="floor-label">${i + 1}F</span>
+      <span class="floor-area">${fmt(floorArea)} ㎡</span>
+      <input type="number" step="any" value="${oldVal}" data-rent="${i}">
+      <span class="unit">円/㎡</span>
+    `;
+    row.querySelector('input').addEventListener('input', (e) => {
+      d.rents[i] = e.target.value === '' ? '' : parseFloat(e.target.value);
+      recalcAll();
+    });
+    container.appendChild(row);
+  }
+}
+
+function calc(idx) {
+  const d = DATA[idx];
+  const landArea = num(d.landArea);
+  const landPrice = num(d.landPrice);
+  const buildingPricePerSqm = num(d.buildingPrice);
+  const coverage = num(d.coverageRatio);
+  const far = num(d.floorAreaRatio);
+  const saleRate = num(d.saleRate);
+  const taxRate = num(d.taxRate);
+
+  const buildingArea = landArea * far / 100;
+  const floorCount = coverage > 0 ? Math.floor(far / coverage) : 0;
+  const floorArea = floorCount > 0 ? buildingArea / floorCount : 0;
+
+  const landTotal = landArea * landPrice;
+  const buildingTotal = buildingArea * buildingPricePerSqm;
+  const costTotal = landTotal + buildingTotal;
+
+  let monthlyRent = 0;
+  for (let i = 0; i < floorCount; i++) {
+    const r = i < d.rents.length ? num(d.rents[i]) : 0;
+    monthlyRent += floorArea * r;
+  }
+  const yearlyRent = monthlyRent * 12;
+
+  const salePrice = saleRate > 0 ? yearlyRent / (saleRate / 100) : 0;
+
+  const e1 = num(d.expense1);
+  const e2 = num(d.expense2);
+  const exp1 = d.expense1Mode === 'pct' ? costTotal * e1 / 100 : e1;
+  const exp2 = d.expense2Mode === 'pct' ? costTotal * e2 / 100 : e2;
+  const expenseTotal = exp1 + exp2;
+
+  const profit = salePrice - costTotal - expenseTotal;
+  const profitRate = salePrice > 0 ? profit / salePrice : 0;
+  const yieldRate = costTotal > 0 ? yearlyRent / costTotal : 0;
+  const afterTax = profit * (1 - taxRate / 100);
+
+  return {
+    landTotal, buildingTotal, costTotal,
+    buildingArea, floorCount,
+    monthlyRent, yearlyRent, salePrice,
+    expenseTotal, profit, profitRate,
+    yieldRate, afterTax
+  };
+}
+
+function recalcAll() {
+  const results = [calc(0), calc(1)];
+  renderResult(0, results[0]);
+  renderResult(1, results[1]);
+  renderDiff(results);
+}
+
+function renderResult(idx, r) {
+  const name = NAMES[idx];
+  const el = document.getElementById('result-' + idx);
+  const rows = [
+    ['原価合計', fmtYen(r.costTotal)],
+    ['　土地合計', fmtYen(r.landTotal)],
+    ['　建物合計', fmtYen(r.buildingTotal)],
+    ['月間家賃収入', fmtYen(r.monthlyRent)],
+    ['年間家賃収入', fmtYen(r.yearlyRent)],
+    ['販売価格', fmtYen(r.salePrice)],
+    ['経費合計', fmtYen(r.expenseTotal)],
+    ['販売利益', fmtYen(r.profit), r.profit],
+    ['販売利益率', fmtPct(r.profitRate * 100), r.profitRate],
+    ['利回り', fmtPct(r.yieldRate * 100), r.yieldRate],
+    ['税引き後利益', fmtYen(r.afterTax), r.afterTax],
+  ];
+
+  el.innerHTML = `<h3>${escHtml(name)}</h3>` + rows.map(([label, value, raw]) => {
+    let cls = '';
+    if (raw !== undefined) cls = raw >= 0 ? 'positive' : 'negative';
+    return `<div class="result-row"><span class="r-label">${label}</span><span class="r-value ${cls}">${value}</span></div>`;
+  }).join('');
+}
+
+function renderDiff(results) {
+  const el = document.getElementById('diff-panel');
+  const keys = [
+    ['原価合計', 'costTotal', 'yen', 'lower'],
+    ['月間家賃収入', 'monthlyRent', 'yen', 'higher'],
+    ['年間家賃収入', 'yearlyRent', 'yen', 'higher'],
+    ['販売価格', 'salePrice', 'yen', 'higher'],
+    ['経費合計', 'expenseTotal', 'yen', 'lower'],
+    ['販売利益', 'profit', 'yen', 'higher'],
+    ['販売利益率', 'profitRate', 'pct', 'higher'],
+    ['利回り', 'yieldRate', 'pct', 'higher'],
+    ['税引き後利益', 'afterTax', 'yen', 'higher'],
+  ];
+
+  let html = `<h3>比較（差分）</h3>`;
+  keys.forEach(([label, key, type, better]) => {
+    const a = results[0][key];
+    const b = results[1][key];
+    const diff = a - b;
+    if (a === 0 && b === 0) {
+      html += `<div class="diff-row"><span class="d-label">${label}</span><span class="d-value">-</span></div>`;
+      return;
+    }
+    const winner = diff > 0 ? (better === 'higher' ? 'a' : 'b') : diff < 0 ? (better === 'higher' ? 'b' : 'a') : '';
+    const diffStr = type === 'pct' ? fmtPct((diff) * 100) : fmtYen(diff);
+    const hlClass = winner === 'a' ? 'highlight-a' : winner === 'b' ? 'highlight-b' : '';
+    const winLabel = winner === 'a' ? NAMES[0] : winner === 'b' ? NAMES[1] : '';
+    html += `<div class="diff-row">
+      <span class="d-label">${label}</span>
+      <span class="d-value">${diffStr} ${winLabel ? `<span class="${hlClass}">${escHtml(winLabel)}有利</span>` : ''}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// Tabs
+function bindTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tab-name-input')) return;
+      const t = parseInt(btn.dataset.tab);
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('form-' + t).classList.remove('hidden');
+    });
+  });
+
+  document.querySelectorAll('.tab-name-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      NAMES[parseInt(inp.dataset.idx)] = inp.value || ('件名' + (parseInt(inp.dataset.idx) === 0 ? 'A' : 'B'));
+      recalcAll();
+    });
+    inp.addEventListener('click', (e) => e.stopPropagation());
+  });
+}
+
+// Helpers
+function num(v) { return v === '' || v === undefined || v === null || isNaN(v) ? 0 : parseFloat(v); }
+function fmt(n) { return Number(n.toFixed(2)).toLocaleString('ja-JP'); }
+function fmtYen(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function fmtPct(n) { return n.toFixed(2) + '%'; }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+init();
+</script>
+</body>
+</html>
