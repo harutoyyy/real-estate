@@ -33,7 +33,7 @@ header h1 { font-size: 1.5rem; letter-spacing: 0.05em; }
 /* Auto calc display */
 .auto-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
 .auto-row label { flex: 0 0 120px; font-size: 0.85rem; color: #555; }
-.auto-row .value { flex: 1; font-size: 0.9rem; font-weight: 600; color: #1a237e; text-align: right; padding-right: 10px; }
+.auto-row .value { flex: 1; font-size: 0.85rem; font-weight: 600; color: #1a237e; text-align: right; padding-right: 10px; }
 .auto-row .unit { flex: 0 0 50px; font-size: 0.8rem; color: #888; }
 
 /* Toggle */
@@ -192,6 +192,21 @@ function buildForm(idx) {
         <label>容積率</label>
         <input type="text" class="num-input" data-field="floorAreaRatio" inputmode="decimal">
         <span class="unit">%</span>
+      </div>
+      <div class="auto-row">
+        <label>土地面積</label>
+        <span class="value" id="landAreaConv-${idx}">-</span>
+        <span class="unit" id="landAreaConvUnit-${idx}"></span>
+      </div>
+      <div class="auto-row">
+        <label>土地単価</label>
+        <span class="value" id="landPriceConv-${idx}">-</span>
+        <span class="unit" id="landPriceConvUnit-${idx}"></span>
+      </div>
+      <div class="auto-row">
+        <label>建物単価</label>
+        <span class="value" id="buildingPriceConv-${idx}">-</span>
+        <span class="unit" id="buildingPriceConvUnit-${idx}"></span>
       </div>
       <div class="auto-row">
         <label>建物面積</label>
@@ -363,41 +378,55 @@ function updateFloors(idx) {
 function resetSection(idx, section) {
   const d = DATA[idx];
   const el = document.getElementById('form-' + idx);
-  const fields = {
-    land: ['landArea', 'landPrice', 'buildingPrice', 'coverageRatio', 'floorAreaRatio'],
-    expense: ['expense1', 'expense2'],
-    rent: [],
-    other: ['saleRate', 'taxRate']
-  };
 
   if (section === 'rent') {
     d.rents = d.rents.map(() => '');
+    d.rentUnit = 'sqm';
     document.getElementById('rent-all-' + idx).value = '';
+    // Reset rent unit toggles
+    el.querySelectorAll('.toggle-btn[data-toggle="rentUnit"]').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === 'sqm');
+    });
     updateFloors(idx);
     recalcAll();
     return;
   }
 
-  const resetFields = fields[section] || [];
-  resetFields.forEach(f => {
+  const fieldMap = {
+    land: { fields: ['landArea', 'landPrice', 'buildingPrice', 'coverageRatio', 'floorAreaRatio'],
+            toggles: { landAreaUnit: 'sqm', landPriceUnit: 'sqm', buildingPriceUnit: 'sqm' } },
+    expense: { fields: ['expense1', 'expense2'],
+               toggles: { expense1Mode: 'yen', expense2Mode: 'yen' } },
+    other: { fields: ['saleRate', 'taxRate'], toggles: {} }
+  };
+
+  const cfg = fieldMap[section];
+  if (!cfg) return;
+
+  // Reset data values
+  cfg.fields.forEach(f => {
     if (f === 'saleRate') d[f] = 5.5;
     else if (f === 'taxRate') d[f] = 33;
     else d[f] = '';
   });
 
-  // Reset toggles for the section
-  if (section === 'land') {
-    d.landAreaUnit = 'sqm';
-    d.landPriceUnit = 'sqm';
-    d.buildingPriceUnit = 'sqm';
-  }
-  if (section === 'expense') {
-    d.expense1Mode = 'yen';
-    d.expense2Mode = 'yen';
-  }
+  // Reset input elements
+  cfg.fields.forEach(f => {
+    const inp = el.querySelector(`input[data-field="${f}"]`);
+    if (!inp) return;
+    if (f === 'saleRate') inp.value = '5.5';
+    else if (f === 'taxRate') inp.value = '33';
+    else inp.value = '';
+  });
 
-  // Re-render the form to reflect reset
-  buildForm(idx);
+  // Reset toggles
+  Object.entries(cfg.toggles).forEach(([field, defaultVal]) => {
+    d[field] = defaultVal;
+    el.querySelectorAll(`.toggle-btn[data-toggle="${field}"]`).forEach(b => {
+      b.classList.toggle('active', b.dataset.val === defaultVal);
+    });
+  });
+
   if (section === 'land') updateFloors(idx);
   recalcAll();
 }
@@ -471,6 +500,57 @@ function recalcAll() {
   renderResult(0, results[0]);
   renderResult(1, results[1]);
   renderDiff(results);
+  updateConversions(0);
+  updateConversions(1);
+}
+
+function updateConversions(idx) {
+  const d = DATA[idx];
+  const landAreaRaw = num(d.landArea);
+  const landPriceRaw = num(d.landPrice);
+  const buildingPriceRaw = num(d.buildingPrice);
+
+  // 土地面積: 入力が㎡→坪を表示、坪→㎡を表示
+  if (landAreaRaw > 0) {
+    if (d.landAreaUnit === 'sqm') {
+      document.getElementById('landAreaConv-' + idx).textContent = fmt(landAreaRaw / TSUBO);
+      document.getElementById('landAreaConvUnit-' + idx).textContent = '坪';
+    } else {
+      document.getElementById('landAreaConv-' + idx).textContent = fmt(landAreaRaw * TSUBO);
+      document.getElementById('landAreaConvUnit-' + idx).textContent = '㎡';
+    }
+  } else {
+    document.getElementById('landAreaConv-' + idx).textContent = '-';
+    document.getElementById('landAreaConvUnit-' + idx).textContent = '';
+  }
+
+  // 土地単価
+  if (landPriceRaw > 0) {
+    if (d.landPriceUnit === 'sqm') {
+      document.getElementById('landPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(landPriceRaw * TSUBO));
+      document.getElementById('landPriceConvUnit-' + idx).textContent = '円/坪';
+    } else {
+      document.getElementById('landPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(landPriceRaw / TSUBO));
+      document.getElementById('landPriceConvUnit-' + idx).textContent = '円/㎡';
+    }
+  } else {
+    document.getElementById('landPriceConv-' + idx).textContent = '-';
+    document.getElementById('landPriceConvUnit-' + idx).textContent = '';
+  }
+
+  // 建物単価
+  if (buildingPriceRaw > 0) {
+    if (d.buildingPriceUnit === 'sqm') {
+      document.getElementById('buildingPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(buildingPriceRaw * TSUBO));
+      document.getElementById('buildingPriceConvUnit-' + idx).textContent = '円/坪';
+    } else {
+      document.getElementById('buildingPriceConv-' + idx).textContent = '¥' + addCommas(Math.round(buildingPriceRaw / TSUBO));
+      document.getElementById('buildingPriceConvUnit-' + idx).textContent = '円/㎡';
+    }
+  } else {
+    document.getElementById('buildingPriceConv-' + idx).textContent = '-';
+    document.getElementById('buildingPriceConvUnit-' + idx).textContent = '';
+  }
 }
 
 function renderResult(idx, r) {
