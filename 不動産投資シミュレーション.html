@@ -305,7 +305,7 @@ function buildForm(idx) {
       DATA[idx][field] = val;
 
       if (field === 'landUnit') {
-        // Rebuild form to update all unit labels
+        convertLandValues(idx, val);
         buildForm(idx);
         updateFloors(idx);
         recalcAll();
@@ -316,6 +316,7 @@ function buildForm(idx) {
       wrap.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       if (field === 'rentUnit') {
+        convertRentValues(idx, val);
         updateFloors(idx);
       }
       recalcAll();
@@ -401,6 +402,36 @@ function updateFloors(idx) {
     });
     container.appendChild(row);
   }
+}
+
+function convertLandValues(idx, newUnit) {
+  const d = DATA[idx];
+  const oldUnit = newUnit === 'tsubo' ? 'sqm' : 'tsubo';
+  // 面積: sqm→tsubo = ÷TSUBO, tsubo→sqm = ×TSUBO
+  // 単価: sqm→tsubo = ×TSUBO, tsubo→sqm = ÷TSUBO
+  if (newUnit === 'tsubo') {
+    if (d.landArea !== '') d.landArea = roundSmart(num(d.landArea) / TSUBO);
+    if (d.landPrice !== '') d.landPrice = roundSmart(num(d.landPrice) * TSUBO);
+    if (d.buildingPrice !== '') d.buildingPrice = roundSmart(num(d.buildingPrice) * TSUBO);
+  } else {
+    if (d.landArea !== '') d.landArea = roundSmart(num(d.landArea) * TSUBO);
+    if (d.landPrice !== '') d.landPrice = roundSmart(num(d.landPrice) / TSUBO);
+    if (d.buildingPrice !== '') d.buildingPrice = roundSmart(num(d.buildingPrice) / TSUBO);
+  }
+}
+
+function convertRentValues(idx, newUnit) {
+  const d = DATA[idx];
+  // 単価: sqm→tsubo = ×TSUBO, tsubo→sqm = ÷TSUBO
+  const factor = newUnit === 'tsubo' ? TSUBO : (1 / TSUBO);
+  d.rents = d.rents.map(r => r !== '' ? roundSmart(num(r) * factor) : '');
+  // 一括入力欄もクリア
+  const allInp = document.getElementById('rent-all-' + idx);
+  if (allInp) allInp.value = '';
+}
+
+function roundSmart(n) {
+  return Math.round(n * 100) / 100;
 }
 
 function resetSection(idx, section) {
